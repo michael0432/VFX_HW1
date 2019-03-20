@@ -52,7 +52,8 @@ def sampleIntensities(imgs):
 
     num_layer = len(imgs)
     num_sample = ZMAX - ZMIN + 1
-    mid_img = imgs[num_layer // 2]
+
+    mid_img = imgs[(num_layer // 2)]
     intensity = np.zeros((num_sample, num_layer), dtype=np.uint8)
 
     for i in range(ZMIN, ZMAX + 1):
@@ -67,7 +68,7 @@ def sampleIntensities(imgs):
     return intensity
     
 def gslove(img_list, sample_list, lamdba, rgb):
-    
+    # ppt page 44 / 45
     n = 256
     A = np.zeros((img_list.shape[0]*sample_list.shape[0]+n-1,n+sample_list.shape[0]), dtype = np.float64)
     B = np.zeros((A.shape[0],1), dtype = np.float64)
@@ -95,11 +96,12 @@ def gslove(img_list, sample_list, lamdba, rgb):
 
     plt.figure()
     plt.plot(g)
-    plt.savefig(out_dir+'response_curve_'+rgb+'.png')
+    plt.savefig(out_dir+'response_curve_'+str(rgb)+'.png')
     return g
 
 
 def reconstruct_radiance_map(image_list, response_curve, rgb):
+    # ppt page 47
     rad =  np.zeros((image_list.shape[1],image_list.shape[2]), dtype=np.float64)
 
     for i in range(image_list.shape[1]):
@@ -108,7 +110,6 @@ def reconstruct_radiance_map(image_list, response_curve, rgb):
             w = np.array([weight_function[image_list[x][i][j][rgb]] for x in range(image_list.shape[0])])
             w_sum = np.nansum(w)
             if w_sum >= 0:
-                # print(w.shape)
                 rad[i][j] = (np.nansum(weight_function[image_list[:,i,j,rgb]] * (response_curve[image_list[:,i,j,rgb]]-np.log(shutter_speed_list)))) / w_sum
             else:
                 rad[i][j] = g[image_list.shape[0] // 2] - math.log(shutter_speed_list[image_list.shape[0] // 2])
@@ -117,15 +118,6 @@ def reconstruct_radiance_map(image_list, response_curve, rgb):
 
 def tone_mapping(image, gamma):
     return cv2.pow(image/255., 1.0/gamma)
-
-def colorAdjustment(img, T):
-    m, n, c = img.shape
-    output = np.zeros((m, n, c))
-    for ch in range(c):
-        img_avg, T_avg = np.average(img[:, :, ch]), np.average(T[:, :, ch])
-        output[..., ch] = img[..., ch] * (T_avg / img_avg)
-
-    return output
 
 if __name__ == '__main__':
     # set args
