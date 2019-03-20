@@ -13,6 +13,7 @@ valid_image = ['.jpg','.png']
 
 # TODO : read shutter speed by read txt
 shutter_speed_list = np.array([0.03125,0.0625,0.125,0.25,0.5,1,2,4,8,16,32,64,128,256,512,1024])
+shutter_speed_list = np.array([0.03125,0.0625,0.125,0.25,0.5,1,2,4])
 shutter_speed_list = np.reciprocal(shutter_speed_list)
 weight_function = np.zeros(256, dtype=np.float64)
 ZMIN = 0
@@ -28,10 +29,11 @@ def read_img(path):
     for filename in sorted(os.listdir(path)):
         ext = os.path.splitext(filename)[1]
         # only read .jpg / .png
-        if ext.lower() in valid_image:
-            im = cv2.imread(os.path.join(path,filename))
-            image_list.append(np.array(im))
-            count += 1
+        if count < 8:
+            if ext.lower() in valid_image:
+                im = cv2.imread(os.path.join(path,filename))
+                image_list.append(np.array(im))
+                count += 1
     image_list = np.array(image_list)
     # image_list shape : (number_of_image, image.shape[0], image.shape[1], 3)
     return image_list
@@ -133,8 +135,8 @@ if __name__ == '__main__':
     image_list = read_img(path)
 
     # aglin image
-    alignMTB = cv2.createAlignMTB()
-    alignMTB.process(image_list, image_list)
+    # alignMTB = cv2.createAlignMTB()
+    # alignMTB.process(image_list, image_list)
 
     # weighting function : ppt page 32
     make_weight_function()
@@ -149,7 +151,10 @@ if __name__ == '__main__':
         response_curve = gslove(image_list, sample_int, 100, i)
 
         # reconstruct radiance map
-        radiance_img.append(reconstruct_radiance_map(image_list, response_curve, i))
+        
+        tmp_i = reconstruct_radiance_map(image_list, response_curve, i)
+        tmp_i = cv2.normalize(tmp_i, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
+        radiance_img.append(tmp_i)
 
     radiance_img = np.array(radiance_img)
     
@@ -163,4 +168,4 @@ if __name__ == '__main__':
     # cv2.imwrite(out_dir+'test_out.hdr',output)
     # output = tone_mapping(output, 1.5)
     # output = cv2.normalize(output, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
-    # cv2.imwrite(out_dir+'test_out.png',output)
+    cv2.imwrite(out_dir+'test_out.png',output)
